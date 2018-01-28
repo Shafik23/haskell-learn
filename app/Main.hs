@@ -1,7 +1,9 @@
 -- {-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Main where
 
+import Data.Time
 import Data.List
 import Data.Char
 import System.IO
@@ -71,9 +73,9 @@ mergesort xs = merge (mergesort left) (mergesort right)
 
 
 
-data Person = Person { firstName :: String
+data Person' = Person' { firstName :: String
                      , lastName :: String
-                     , age :: Int
+                     , age' :: Int
                      , height :: Float
                      , phoneNumber :: String
                      , flavor :: String
@@ -235,4 +237,218 @@ sum' n = n + sum' (n-1)
 myWords :: [Char] -> [[Char]]
 myWords "" = []
 myWords (' ':xs) = myWords $ dropWhile (== ' ') xs
-myWords s = takeWhile (/= ' ') s : myWords (dropWhile (/= ' ') s)
+myWords s = takeWhile notspace s : myWords (dropWhile notspace s)
+  where notspace :: Char -> Bool
+        notspace = (/= ' ')
+
+
+acro :: [Char] -> [Char]
+acro str = [c | c <-str, elem c ['A'..'Z']]
+
+
+filterMul3 :: [Integer] -> [Integer]
+filterMul3 = filter (\x -> (x `rem` 3) == 0)
+
+howManyMul3 :: [Integer] -> Int
+howManyMul3 = length . filterMul3
+
+removeArticles :: [Char] -> [[Char]]
+removeArticles = filter (not . (`elem` ["the", "a", "an"])) . words
+
+
+zip' :: [a] -> [b] -> [(a, b)]
+zip' _ [] = []
+zip' [] _ = []
+zip' (a:as) (b:bs) = (a, b) : zip as bs
+
+zipWith' :: (a -> b -> c) -> [a] -> [b] -> [c]
+zipWith' f _ [] = []
+zipWith' f [] _ = []
+zipWith' f (a:as) (b:bs) = f a b : zipWith' f as bs
+
+zip'' :: [a] -> [b] -> [(a, b)]
+zip'' = zipWith' (,)
+
+
+myReverse :: [a] -> [a]
+myReverse [] = []
+myReverse (x:xs) = (myReverse xs) ++ [x]
+
+
+data DatabaseItem = DbString String | DbNumber Integer | DbDate UTCTime deriving (Eq, Ord, Show)
+
+theDatabase :: [DatabaseItem]
+theDatabase = 
+  [ DbDate (UTCTime (fromGregorian 1911 5 1) (secondsToDiffTime 34123))
+  , DbNumber 9001
+  , DbString "Hello, world!"
+  , DbDate (UTCTime (fromGregorian 1921 5 1) (secondsToDiffTime 34123))
+  ]
+
+filterDbDate :: [DatabaseItem] -> [UTCTime]
+filterDbDate = foldr fetchTimes []
+  where
+    fetchTimes :: DatabaseItem -> [UTCTime] -> [UTCTime]
+    fetchTimes (DbDate time) dates = time : dates
+    fetchTimes _ dates = dates
+
+filterDbNumber :: [DatabaseItem] -> [Integer]
+filterDbNumber = foldr fetchDbNumbers []
+  where
+    fetchDbNumbers :: DatabaseItem -> [Integer] -> [Integer]
+    fetchDbNumbers (DbNumber i) dbns = i : dbns
+    fetchDbNumbers _ dbns = dbns
+
+mostRecent :: [DatabaseItem] -> UTCTime
+mostRecent = maximum . filterDbDate
+
+sumDb :: [DatabaseItem] -> Integer
+sumDb = sum . filterDbNumber
+
+avgDb :: [DatabaseItem] -> Double
+avgDb db = (fromIntegral (sumDb db)) / (fromIntegral (length (filterDbNumber db)))
+
+
+factorials :: Int -> [Integer]
+factorials n = take n $ scanl (*) 1 [1..]
+
+
+stops = "pbtdkg"
+vowels = "aeiou"
+
+tups :: [Char] -> [Char] -> [[Char]]
+tups ss vs = [a : b : c : [] | a <- ss, b <- vs, c <- ss, a == 'p']
+
+
+myOr :: [Bool] -> Bool
+myOr = foldr (||) False
+
+myAny :: (a -> Bool) -> [a] -> Bool
+myAny f list = myOr $ map f list
+
+myElem :: Eq a => a -> [a] -> Bool
+myElem e = myAny (== e)
+
+myReverse' :: [a] -> [a]
+myReverse' = foldl (flip (:)) []
+
+myFilter :: (a -> Bool) -> [a] -> [a]
+myFilter f = foldr (\x list -> if (f x) then x:list else list) []
+
+squish :: [[a]] -> [a]
+squish = foldr f []
+  where 
+    f sublist list = sublist ++ list
+
+
+
+data Price = Price Integer deriving (Eq, Show)
+data Manufacturer = Mini | Mazda | Tata deriving (Eq, Show)
+data Airline = PapuAir | CatapultsR'Us | TakeYourChancesUnited deriving (Eq, Show)
+data Vehicle = Car Manufacturer Price | Plane Airline Integer deriving (Eq, Show)
+
+myCar = Car Mini (Price 14000)
+urCar = Car Mazda (Price 20000)
+clownCar = Car Tata (Price 7000)
+doge = Plane PapuAir
+
+isCar :: Vehicle -> Bool
+isCar (Car m p) = True
+isCar _ = False
+
+isPlane :: Vehicle -> Bool
+isPlane (Plane a s) = True
+isPlane _ = False
+
+areCars :: [Vehicle] -> [Bool]
+areCars = map isCar
+
+getManu :: Vehicle -> Manufacturer
+getManu (Car m p) = m
+
+
+class TooMany a where
+  tooMany :: a -> Bool
+
+instance TooMany Int
+  where
+    tooMany n = n > 42
+
+newtype Goats = Goats Int deriving Show
+
+instance TooMany Goats
+  where
+    tooMany (Goats n) = tooMany n
+
+
+instance TooMany (Int, String)
+  where
+    tooMany (i, str) = i > 60
+
+instance TooMany (Int, Int)
+  where
+    tooMany (i, j) = tooMany (i+j)
+
+instance (Num a, TooMany a, Ord a) => TooMany (a, a)
+  where
+    tooMany (x, y) = x + y > 55
+
+
+data Person =
+  Person { name :: String
+         , age :: Int }
+         deriving (Eq, Show)
+
+
+data OperatingSystem =
+    GnuPlusLinux
+  | OpenBSDPlusNevermindJustBSDStill
+  | Mac
+  | Windows
+  deriving (Eq, Show)
+
+data ProgLang =
+      Haskell
+    | Agda
+    | Idris
+    | PureScript
+    deriving (Eq, Show)
+
+data Programmer =
+  Programmer { os :: OperatingSystem
+             , lang :: ProgLang }
+  deriving (Eq, Show)
+
+
+allOperatingSystems :: [OperatingSystem]
+allOperatingSystems =
+  [ GnuPlusLinux
+  , OpenBSDPlusNevermindJustBSDStill
+  , Mac
+  , Windows
+  ]
+
+allLanguages :: [ProgLang]
+allLanguages = [Haskell, Agda, Idris, PureScript]
+
+allProgrammers :: [Programmer]
+allProgrammers = [ Programmer {os = o, lang = p} | o <- allOperatingSystems, p <- allLanguages ]
+
+
+data BinaryTree a = 
+    Leaf
+  | Node (BinaryTree a) a (BinaryTree a)
+  deriving (Eq, Ord, Show)
+
+insertTree :: Ord a => a -> BinaryTree a -> BinaryTree a
+insertTree val Leaf = Node Leaf val Leaf
+insertTree val (Node left x right)
+  | val == x = Node left x right
+  | val < x  = Node (insertTree val left) x right
+  | val > x  = Node left x (insertTree val right)
+
+
+mapTree :: (a -> b) -> BinaryTree a -> BinaryTree b
+mapTree _ Leaf = Leaf
+mapTree f (Node left x right) = 
+  Node (mapTree f left) (f x) (mapTree f right)
