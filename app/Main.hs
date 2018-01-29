@@ -3,7 +3,9 @@
 
 module Main where
 
+import Data.Bool
 import Data.Time
+import Data.Maybe
 import Data.List
 import Data.Char
 import System.IO
@@ -82,13 +84,13 @@ data Person' = Person' { firstName :: String
                      } deriving (Show)
 
 data Expression = Number Int
-                | Add Expression Expression
+                | Add' Expression Expression
                 | Subtract Expression Expression
                 deriving (Eq, Ord, Show)
 
 calculate :: Expression -> Int
 calculate (Number x) = x
-calculate (Add x y) = (calculate x) + (calculate y)
+calculate (Add' x y) = (calculate x) + (calculate y)
 calculate (Subtract x y) = (calculate x) - (calculate y)
 
 
@@ -440,6 +442,13 @@ data BinaryTree a =
   | Node (BinaryTree a) a (BinaryTree a)
   deriving (Eq, Ord, Show)
 
+testTree :: BinaryTree Integer
+testTree =
+  Node (Node Leaf 1 Leaf)
+  2
+  (Node Leaf 3 Leaf)
+
+
 insertTree :: Ord a => a -> BinaryTree a -> BinaryTree a
 insertTree val Leaf = Node Leaf val Leaf
 insertTree val (Node left x right)
@@ -447,8 +456,92 @@ insertTree val (Node left x right)
   | val < x  = Node (insertTree val left) x right
   | val > x  = Node left x (insertTree val right)
 
-
 mapTree :: (a -> b) -> BinaryTree a -> BinaryTree b
 mapTree _ Leaf = Leaf
 mapTree f (Node left x right) = 
   Node (mapTree f left) (f x) (mapTree f right)
+
+
+inorder :: BinaryTree a -> [a]
+inorder Leaf = []
+inorder (Node left x right) = (inorder left) ++ [x] ++ (inorder right)
+
+preorder :: BinaryTree a -> [a]
+preorder Leaf = []
+preorder (Node left x right) = [x] ++ (preorder left) ++ (preorder right)
+
+postorder :: BinaryTree a -> [a]
+postorder Leaf = []
+postorder (Node left x right) = (postorder left) ++ (postorder right) ++ [x] 
+
+foldTree :: (a -> b -> b)
+         -> b
+         -> BinaryTree a
+         -> b
+foldTree f x tree = foldr f x (inorder tree)
+
+
+isSubseqOf :: (Eq a) => [a] -> [a] -> Bool
+isSubseqOf [] _ = True
+isSubseqOf _ [] = False
+isSubseqOf search@(x:xs) (y:ys)
+  | (x == y)  = isSubseqOf xs ys
+  | otherwise = isSubseqOf search ys
+
+
+capitalizeWords :: String -> [(String, String)]
+capitalizeWords s = zip (words s) (map cap (words s))
+  where
+    cap (c:cs) = (toUpper c) : cs
+
+
+type Digit = Char
+type PhoneValues = String
+type Presses = Int
+
+data DaPhone = DaPhone [(Digit, PhoneValues)] deriving (Eq, Show)
+
+daphone = DaPhone 
+  [('1', "1"),
+   ('2', "abc2"),
+   ('3', "def3"),
+   ('4', "ghi4"),
+   ('5', "jkl5"),
+   ('6', "mno6"),
+   ('7', "pqrs7"),
+   ('8', "tuv8"),
+   ('9', "wxyz9"),
+   ('0', " +_0"),
+   ('*', "*^"),
+   ('#', "#.,")]
+
+convo :: [String]
+convo =
+  ["Wanna play 20 questions",
+   "Ya",
+   "U 1st haha",
+   "Lol ok. Have u ever tasted alcohol lol",
+   "Lol ya",
+   "Wow ur cool haha. Ur turn",
+   "Ok. Do u think I am pretty Lol",
+   "Lol ya",
+   "Haha thanks just making sure rofl ur turn"]
+
+reverseTaps :: DaPhone -> Char -> [(Digit, Presses)]
+reverseTaps (DaPhone phone) s = 
+  capital ++ [(fst button, fromJust (elemIndex c (snd button)) + 1)]
+  where
+    c = toLower s
+    button = (filter (\(d, chars) -> elem c chars) phone) !! 0
+    capital = bool [] [('*', 1)] (isUpper s)
+
+
+data Expr = Lit Integer | Add Expr Expr
+
+eval :: Expr -> Integer
+eval (Lit n) = n
+eval (Add e1 e2) = (eval e1) + (eval e2)
+
+printExpr :: Expr -> String
+printExpr (Lit n) = show n
+printExpr (Add e1 e2) = (printExpr e1) ++ " + " ++ (printExpr e2)
