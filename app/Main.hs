@@ -3,6 +3,7 @@
 
 module Main where
 
+import Data.Either
 import Data.Bool
 import Data.Time
 import Data.Maybe
@@ -55,7 +56,7 @@ max' (x:xs)
 
 quicksort :: (Ord a) => [a] -> [a]
 quicksort [] = []
-quicksort (x:xs) = 
+quicksort (x:xs) =
   let smallerSide = quicksort [a | a <- xs, a <= x]
       biggerSide  = quicksort [a | a <- xs, a > x]
   in smallerSide ++ [x] ++ biggerSide
@@ -102,7 +103,7 @@ newHead (x:xs) = x
 type Bit = Int
 
 bin2int :: [Bit] -> Int
--- bin2int bits = sum [w*b | (w,b) <- zip weights bits] where weights = iterate (*2) 1 
+-- bin2int bits = sum [w*b | (w,b) <- zip weights bits] where weights = iterate (*2) 1
 bin2int = foldr (\x y -> x + 2*y) 0
 
 int2bin :: Int -> [Bit]
@@ -167,7 +168,7 @@ instance Eq StringOrInt where
   (==) (TisAnInt x) (TisAnInt y) = x==y
   (==) (TisAString x) (TisAString y) = x==y
 
-data DayOfWeek = 
+data DayOfWeek =
   Mon | Tue | Wed | Thu | Fri | Sat | Sun
   deriving (Eq, Show)
 instance Ord DayOfWeek where
@@ -204,7 +205,7 @@ functionC x y = case (x > y) of
                   _ -> y
 
 
-data WherePenguinsLive = 
+data WherePenguinsLive =
   Galapagos
   | Antartica
   | Australia
@@ -280,7 +281,7 @@ myReverse (x:xs) = (myReverse xs) ++ [x]
 data DatabaseItem = DbString String | DbNumber Integer | DbDate UTCTime deriving (Eq, Ord, Show)
 
 theDatabase :: [DatabaseItem]
-theDatabase = 
+theDatabase =
   [ DbDate (UTCTime (fromGregorian 1911 5 1) (secondsToDiffTime 34123))
   , DbNumber 9001
   , DbString "Hello, world!"
@@ -339,7 +340,7 @@ myFilter f = foldr (\x list -> if (f x) then x:list else list) []
 
 squish :: [[a]] -> [a]
 squish = foldr f []
-  where 
+  where
     f sublist list = sublist ++ list
 
 
@@ -437,7 +438,7 @@ allProgrammers :: [Programmer]
 allProgrammers = [ Programmer {os = o, lang = p} | o <- allOperatingSystems, p <- allLanguages ]
 
 
-data BinaryTree a = 
+data BinaryTree a =
     Leaf
   | Node (BinaryTree a) a (BinaryTree a)
   deriving (Eq, Ord, Show)
@@ -458,7 +459,7 @@ insertTree val (Node left x right)
 
 mapTree :: (a -> b) -> BinaryTree a -> BinaryTree b
 mapTree _ Leaf = Leaf
-mapTree f (Node left x right) = 
+mapTree f (Node left x right) =
   Node (mapTree f left) (f x) (mapTree f right)
 
 
@@ -472,7 +473,7 @@ preorder (Node left x right) = [x] ++ (preorder left) ++ (preorder right)
 
 postorder :: BinaryTree a -> [a]
 postorder Leaf = []
-postorder (Node left x right) = (postorder left) ++ (postorder right) ++ [x] 
+postorder (Node left x right) = (postorder left) ++ (postorder right) ++ [x]
 
 foldTree :: (a -> b -> b)
          -> b
@@ -501,7 +502,7 @@ type Presses = Int
 
 data DaPhone = DaPhone [(Digit, PhoneValues)] deriving (Eq, Show)
 
-daphone = DaPhone 
+daphone = DaPhone
   [('1', "1"),
    ('2', "abc2"),
    ('3', "def3"),
@@ -528,7 +529,7 @@ convo =
    "Haha thanks just making sure rofl ur turn"]
 
 reverseTaps :: DaPhone -> Char -> [(Digit, Presses)]
-reverseTaps (DaPhone phone) s = 
+reverseTaps (DaPhone phone) s =
   capital ++ [(fst button, fromJust (elemIndex c (snd button)) + 1)]
   where
     c = toLower s
@@ -545,3 +546,73 @@ eval (Add e1 e2) = (eval e1) + (eval e2)
 printExpr :: Expr -> String
 printExpr (Lit n) = show n
 printExpr (Add e1 e2) = (printExpr e1) ++ " + " ++ (printExpr e2)
+
+
+notThe :: String -> Maybe String
+notThe "the" = Nothing
+notThe s = Just s
+
+replaceThe :: String -> String
+replaceThe = unwords . filter (/= "") . map (fromMaybe "" . notThe) . words
+
+
+countTheBeforeVowel :: String -> Integer
+countTheBeforeVowel str = sum (map detect pairs)
+  where
+    ws = map notThe (words str)
+    pairs = zip ws (tail ws)
+    detect :: (Maybe String, Maybe String) -> Integer
+    detect (Just _, _) = 0
+    detect (Nothing, Just (c:cs)) = bool 0 1 (elem c vowels)
+
+countVowels :: String -> Integer
+countVowels = sum . map ((\x -> if x then 1 else 0) . (`elem` vowels) . toLower)
+
+
+newtype Word' = Word' String deriving (Eq, Show)
+
+mkWord :: String -> Maybe Word'
+mkWord s = case countVowels s > fromIntegral (length s `div` 2) of
+             True -> Nothing
+             False -> Just (Word' s)
+
+
+data Nat = Zero | Succ Nat deriving (Eq, Show)
+
+natToInteger :: Nat -> Integer
+natToInteger Zero = 0
+natToInteger (Succ nat) = 1 + natToInteger nat
+
+
+isJust' :: Maybe a -> Bool
+isJust' (Just _) = True
+isJust' _ = False
+
+isNothing' :: Maybe a -> Bool
+isNothing' Nothing = True
+isNothing' _ = False
+
+mayybee :: b -> (a -> b) -> Maybe a -> b
+mayybee x _ Nothing = x
+mayybee x f (Just j) = f j
+
+
+lefts' :: [Either a b] -> [a]
+lefts' ((Left x):es) = x : lefts' es
+lefts' (_:es) = lefts' es
+lefts' [] = []
+
+lefts :: [Either a b] -> [a]
+lefts xs = foldr f [] xs
+  where f (Left x) list = x : list
+        f _ list = list
+
+myIterate :: (a -> a) -> a -> [a]
+myIterate f x = x : myIterate f (f x)
+
+myUnfoldr :: (b -> Maybe (a, b))
+          -> b
+          -> [a]
+myUnfoldr f x = case f x of
+                  (Just (x, y)) -> x : myUnfoldr f y
+                  Nothing -> []
