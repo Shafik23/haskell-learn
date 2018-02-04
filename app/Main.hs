@@ -1,14 +1,17 @@
 -- {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Main where
 
+import Test.QuickCheck
 import Data.Either
 import Data.Bool
 import Data.Time
 import Data.Maybe
 import Data.List
 import Data.Char
+import Data.Monoid
 import System.IO
 import Lib ()
 
@@ -343,6 +346,11 @@ squish = foldr f []
   where
     f sublist list = sublist ++ list
 
+-- ViewPatterns are cool!
+-- In this case, we're saying "if the input *3 == 12, then return 0, otherwise return x+7"
+funcky :: Int -> Int
+funcky ((*3) -> 12) = 0
+funcky x = (x + 7)
 
 
 data Price = Price Integer deriving (Eq, Show)
@@ -616,3 +624,34 @@ myUnfoldr :: (b -> Maybe (a, b))
 myUnfoldr f x = case f x of
                   (Just (x, y)) -> x : myUnfoldr f y
                   Nothing -> []
+
+
+data Optional a = Nada | Only a deriving (Eq, Show)
+
+instance Monoid a => Monoid (Optional a) where
+  mempty = Nada
+  mappend (Only o1) (Only o2) = Only (mappend o1 o2)
+  mappend x Nada = x
+  mappend Nada x = x
+
+instance Arbitrary (Optional String)
+  where arbitrary = frequency [ (1, return Nada), (1, return (Only "cat")) ]
+
+monoidAssoc :: (Eq m, Monoid m) => m -> m -> m -> Bool
+monoidAssoc a b c = (a <> (b <> c)) == ((a <> b) <> c)
+
+monoidLeftIdentity :: (Eq m, Monoid m) => m -> Bool
+monoidLeftIdentity a = (mempty <> a) == a
+
+monoidRightIdentity :: (Eq m, Monoid m) => m -> Bool
+monoidRightIdentity a = (a <> mempty) == a
+
+
+newtype XFirst' a = 
+  First' { getFirst' :: Optional a }
+  deriving (Eq, Show)
+  
+instance Monoid (XFirst' a) where
+  mempty = First' Nada
+  mappend x@(First' (Only o)) _ = x
+  mappend (First' Nada) x = x
