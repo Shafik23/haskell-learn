@@ -12,6 +12,7 @@ import Data.Maybe
 import Data.List
 import Data.Char
 import Data.Monoid
+import qualified Data.Semigroup as S
 import System.IO
 import Lib ()
 
@@ -655,3 +656,82 @@ instance Monoid (XFirst' a) where
   mempty = First' Nada
   mappend x@(First' (Only o)) _ = x
   mappend (First' Nada) x = x
+
+data MyBe a = N | P a
+
+-- instance Monoid (MyBe a) where
+instance Functor MyBe where
+  fmap = undefined
+
+
+
+data Trivial = Trivial deriving (Eq, Show)
+
+instance S.Semigroup Trivial where
+  _ <> _ = Trivial
+
+instance Arbitrary Trivial where
+  arbitrary = return Trivial
+
+semiGroupAssoc :: (Eq m, S.Semigroup m) => m -> m -> m -> Bool
+semiGroupAssoc a b c = 
+  (a S.<> (b S.<> c)) == ((a S.<> b) S.<> c)
+
+type TrivAssoc = Trivial -> Trivial -> Trivial -> Bool
+
+
+newtype BoolConj = BoolConj Bool deriving (Eq, Show)
+newtype BoolDisj = BoolDisj Bool deriving (Eq, Show)
+
+instance S.Semigroup BoolConj where
+  _ <> (BoolConj True) = (BoolConj True)
+  _ <> (BoolConj False) = (BoolConj False)
+
+
+newtype Combine a b =
+  Combine { unCombine :: (a -> b) }
+
+instance S.Semigroup b => S.Semigroup (Combine a b) where
+  (Combine f) <> (Combine g) = Combine (\x -> f x S.<> g x)
+
+newtype Comp a = Comp { unComp :: (a -> a) }
+
+instance S.Semigroup (Comp a) where
+  (Comp x) <> (Comp y) = Comp (x . y)
+
+
+instance Monoid Trivial where
+  mempty = Trivial
+  mappend = (S.<>)
+
+instance Monoid BoolConj where
+  mempty = (BoolConj True)
+  mappend = (S.<>)
+
+instance Monoid BoolDisj where
+  mempty = (BoolDisj True)
+  mappend _ (BoolDisj True) = (BoolDisj True)
+  mappend (BoolDisj True) _ = (BoolDisj True)
+  mappend _ _ = (BoolDisj False)
+
+
+newtype Mem s a = Mem { runMem :: s -> (a, s) }
+
+instance Monoid a => Monoid (Mem s a) where
+  mempty = Mem (\x -> (mempty, x))
+  -- mappend m1 m2 = Mem (\x -> (fst (mf1 x), snd (mf1 (snd (mf2 x)))))
+  mappend m1 m2 = Mem (\x -> (fst (mf1 x) <> fst (mf2 x), snd (mf1 (snd (mf2 x)))))
+    where mf1 = runMem m1
+          mf2 = runMem m2
+
+f' = Mem (\s -> ("hi", s + 1))
+
+main1 = do
+  let rmzero = (runMem mempty) 0
+      rmleft = (runMem (f' <> mempty)) 0
+      rmright = (runMem (mempty <> f')) 0
+  print $ rmleft
+  print $ rmright
+  print $ (rmzero :: (String, Int))
+  print $ rmleft == runMem f' 0
+  print $ rmright == runMem f' 0
