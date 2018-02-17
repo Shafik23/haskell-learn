@@ -49,13 +49,13 @@ initials firstname lastname = [f] ++ ". " ++ [l] ++ "."
         (l:_) = lastname
 
 
-max' :: (Ord a) => [a] -> a
-max' [] = error "Max of empty list doesn't make sense"
-max' [x] = x
-max' (x:xs)
+max'' :: (Ord a) => [a] -> a
+max'' [] = error "Max of empty list doesn't make sense"
+max'' [x] = x
+max'' (x:xs)
   | x > maxTail = x
   | otherwise = maxTail
-  where maxTail = max' xs
+  where maxTail = max'' xs
 
 
 quicksort :: (Ord a) => [a] -> [a]
@@ -163,9 +163,9 @@ data TisAnInteger = TisAn Integer
 instance Eq TisAnInteger where
   (==) (TisAn x) (TisAn y) = x==y
 
-data TwoIntegers = Two Integer Integer
+data TwoIntegers = Two' Integer Integer
 instance Eq TwoIntegers where
-  (==) (Two x y) (Two p q) = (x,y) == (p,q)
+  (==) (Two' x y) (Two' p q) = (x,y) == (p,q)
 
 data StringOrInt = TisAnInt Int | TisAString String
 instance Eq StringOrInt where
@@ -719,7 +719,6 @@ newtype Mem s a = Mem { runMem :: s -> (a, s) }
 
 instance Monoid a => Monoid (Mem s a) where
   mempty = Mem (\x -> (mempty, x))
-  -- mappend m1 m2 = Mem (\x -> (fst (mf1 x), snd (mf1 (snd (mf2 x)))))
   mappend m1 m2 = Mem (\x -> (fst (mf1 x) <> fst (mf2 x), snd (mf1 (snd (mf2 x)))))
     where mf1 = runMem m1
           mf2 = runMem m2
@@ -735,3 +734,189 @@ main1 = do
   print $ (rmzero :: (String, Int))
   print $ rmleft == runMem f' 0
   print $ rmright == runMem f' 0
+
+
+a = fmap (+1) $ read "[1]" :: [Int]
+b = (fmap.fmap) (++ "lol") (Just ["Hi,", "Hello"])
+c = fmap (*2) ((\x -> x - 2))
+
+d = fmap ((return '1' ++) . show) (\x -> [x, 1..3])
+
+e :: IO Integer
+e = let ioi = readIO "1" :: IO Integer
+        changed = fmap (read . ("123" ++) . show) ioi
+     in fmap (*3) changed
+
+
+test_657 = do
+  print $ a
+  print $ b
+  print $ c 1
+  print $ d 0
+  x <- e
+  print $ x
+
+
+
+newtype Identity a = Identity a
+instance Functor Identity where
+  fmap f (Identity x) = Identity (f x)
+
+data Pair a = Pair a a
+instance Functor Pair where
+  fmap f (Pair x y) = Pair (f x) (f y)
+
+data Two a b = Two a b
+instance Functor (Two x) where
+  fmap f (Two x y) = Two x (f y)
+
+data Three a b c = Three a b c
+instance Functor (Three a b) where 
+  fmap f (Three x y z) = Three x y (f z)
+
+data Three' a b = Three' a b b 
+instance Functor (Three' a) where 
+  fmap f (Three' x y z) = Three' x (f y) (f z)
+
+data Four a b c d = Four a b c d
+instance Functor (Four a b c) where
+  fmap f (Four x y z w) = Four x y z (f w)
+
+data Four' a b = Four' a a a b
+instance Functor (Four' a) where
+  fmap f (Four' x y z w) = Four' x y z (f w)
+
+-- Doesn't work due to kinded-ness of "Trivial" being too restrictive
+-- instance Functor Trivial where
+--   fmap f Trivial = Trivial
+
+
+data Possibly a = LolNop | Yeppers a deriving (Eq, Show)
+
+instance Functor Possibly where
+  fmap _ LolNop = LolNop
+  fmap f (Yeppers x) = Yeppers (f x)
+
+
+data Sum' a b = Frst a | Scond b deriving (Eq, Show)
+
+instance Functor (Sum' a) where
+  fmap f (Scond x) = Scond (f x)
+
+
+data Wrap t1 t2 = Wrap (t1 t2) deriving (Eq, Show)
+
+instance Functor t => Functor (Wrap t) where
+  fmap f (Wrap x) = Wrap (fmap f x)
+
+
+
+data BoolAndSomethingElse a = False' a | True' a
+
+instance Functor (BoolAndSomethingElse) where
+  fmap f (False' a) = False' (f a)
+  fmap f (True' a) = True' (f a)
+
+
+data BoolAndMaybeSomethingElse a = Falsish | Truish a
+
+instance Functor (BoolAndMaybeSomethingElse) where
+  fmap _ (Falsish) = Falsish
+  fmap f (Truish a) = Truish (f a)
+
+
+-- Crazy type: don't quite understand it
+newtype Mu f = InF { outF :: f (Mu f) }
+
+
+data Quant a b = Finance | Desk a | Bloor b
+
+instance Functor (Quant a) where
+  fmap f Finance = Finance
+  fmap f (Desk x) = Desk x
+  fmap f (Bloor b) = Bloor (f b)
+
+
+data K a b = K a
+
+instance Functor (K a) where
+  fmap f (K x) = K x
+  
+
+data LiftItOut f a = LiftItOut (f a)
+
+instance Functor f => Functor (LiftItOut f) where
+  fmap func (LiftItOut x) = LiftItOut (fmap func x)
+
+
+data Parappa f g a = DaWrappa (f a) (g a)
+
+instance (Functor f, Functor g) => Functor (Parappa f g) where
+  fmap func (DaWrappa fa ga) = DaWrappa (fmap func fa) (fmap func ga)
+
+
+data Notorious g o a t = Notorious (g o) (g a) (g t)
+
+instance Functor g => Functor (Notorious g o a) where
+  fmap func (Notorious go ga gt) = Notorious go ga (fmap func gt)
+
+
+data List a = Nil | Cons a (List a)
+
+instance Functor List where
+  fmap _ Nil = Nil
+  fmap f (Cons x xs) = Cons (f x) (fmap f xs)
+
+
+data TalkToMe a = Halt | Print String a | Read (String -> a)
+
+instance Functor TalkToMe where
+  fmap f Halt = Halt
+  fmap f (Print str x) = (Print str (f x))
+  fmap f (Read fsa) = Read (f . fsa)
+
+
+
+added :: Maybe Integer
+added = 
+  fmap (+3) (lookup 3 $ zip [1,2,3] [4,5,6])
+
+yy :: Maybe Integer
+yy = lookup 3 $ zip [1,2,3] [4,5,6]
+
+zz :: Maybe Integer
+zz = lookup 2 $ zip [1,2,3] [4,5,6]
+
+tupled :: Maybe (Integer, Integer)
+tupled = (,) <$> yy <*> zz
+
+
+xxx :: Maybe Int
+xxx = elemIndex 3 [1,2,3,4,5]
+
+yyy :: Maybe Int
+yyy = elemIndex 4 [1,2,3,4,5]
+
+max' :: Int -> Int -> Int
+max'= max
+
+maxed :: Maybe Int
+maxed = max' <$> xxx <*> yyy
+
+
+xxxs = [1, 2, 3]
+yyys = [4, 5, 6]
+
+x1 :: Maybe Integer
+x1 = lookup 3 $ zip xxxs yyys
+
+y1 :: Maybe Integer
+y1 = lookup 2 $ zip xxxs yyys
+
+summed :: Maybe Integer
+summed = fmap sum $ (,) <$> x1 <*> y1
+
+
+instance Applicative Identity where
+  pure = Identity
+  (<*>) (Identity f) (Identity a) = (Identity (f a))
