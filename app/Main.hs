@@ -920,3 +920,38 @@ summed = fmap sum $ (,) <$> x1 <*> y1
 instance Applicative Identity where
   pure = Identity
   (<*>) (Identity f) (Identity a) = (Identity (f a))
+
+
+
+newtype Constant a b = 
+  Constant { getConstant :: a }
+  deriving (Eq, Show, Ord)
+
+instance Functor (Constant a) where
+  fmap _ (Constant x) = Constant x
+
+-- Note how you can define one mempty in terms of its "superclass".
+instance Monoid a => Monoid (Constant a b) where
+  mempty = Constant (mempty [])
+  mappend (Constant x) (Constant y) = Constant (mappend x y)
+
+instance Monoid a => Applicative (Constant a) where
+  pure _ = Constant mempty
+  (<*>) x y = Constant (getConstant x <> getConstant y)
+
+
+
+dummyHelloWord = const <$> Just "Hello" <*> Just "World"
+dummyTierNess  = (,,,) <$> Just 90 <*> Just 10 <*> Just "Tierness" <*> pure [1,2,3]
+
+
+
+-- data List a = Nil | Cons a (List a)
+instance Applicative List where
+  pure x = Cons x Nil
+  (<*>) _ Nil = Nil
+  (<*>) Nil _ = Nil
+  (<*>) (Cons f fs) vals = append (f <$> vals) (fs <*> vals)
+    where
+      append Nil ys = ys
+      append (Cons x xs) ys = Cons x (append xs ys)
