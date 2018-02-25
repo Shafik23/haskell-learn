@@ -14,6 +14,7 @@ import Data.Char
 import Data.Monoid
 import qualified Data.Semigroup as S
 import System.IO
+import Control.Monad (join)
 import Lib ()
 
 -- This is a comment.
@@ -955,3 +956,46 @@ instance Applicative List where
     where
       append Nil ys = ys
       append (Cons x xs) ys = Cons x (append xs ys)
+
+
+
+-------------------
+  -- Monads
+-------------------
+
+bind :: Monad m => (a -> m b) -> m a -> m b
+bind f x = join $ fmap f x
+
+echo :: IO ()
+echo = getLine >>= putStrLn
+
+
+twiceWhenEven :: [Integer] -> [Integer]
+-- twiceWhenEven xs = do
+--   x <- xs
+--   if even x
+--      then [x*x, x*x]
+--      else []
+twiceWhenEven xs =
+  xs >>=
+    \x -> if even x
+             then [x*x, x*x]
+             else []
+
+
+data Summ a b = FFirst a | SSecond b deriving (Eq, Show)
+
+instance Functor (Summ a) where
+  fmap f (SSecond x) = SSecond (f x)
+  fmap _ (FFirst x) = FFirst x
+
+instance Applicative (Summ a) where
+  pure = SSecond
+  (<*>) (SSecond f) (SSecond x) = SSecond (f x)
+  (<*>) (FFirst x) _ = (FFirst x)
+  (<*>) (SSecond _) (FFirst x) = (FFirst x)
+
+instance Monad (Summ a) where
+  return = pure
+  (>>=) (SSecond x) f = f x
+  (>>=) (FFirst x) _ = (FFirst x)
