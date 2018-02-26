@@ -920,7 +920,7 @@ summed = fmap sum $ (,) <$> x1 <*> y1
 
 instance Applicative Identity where
   pure = Identity
-  (<*>) (Identity f) (Identity a) = (Identity (f a))
+  (<*>) (Identity f) (Identity a) = Identity (f a)
 
 
 
@@ -999,3 +999,33 @@ instance Monad (Summ a) where
   return = pure
   (>>=) (SSecond x) f = f x
   (>>=) (FFirst x) _ = (FFirst x)
+
+
+data Nope a = NopeDotJpg
+
+instance Functor (Nope) where
+  fmap _ _ = NopeDotJpg
+
+instance Applicative (Nope) where
+  pure _ = NopeDotJpg
+  (<*>) _ _ = NopeDotJpg
+
+instance Monad (Nope) where
+  return = pure
+  (>>=) _ _ = NopeDotJpg
+
+
+-- Identity defined above
+instance Monad Identity where
+  return = pure
+  (>>=) (Identity x) f = f x
+
+
+-- data List a = Nil | Cons a (List a)
+instance Monad List where
+  return = pure
+  (>>=) Nil _ = Nil
+  (>>=) (Cons c list) f = (f c) `concatlist` (list >>= f)
+    where
+      concatlist Nil list = list
+      concatlist (Cons x tail) list = Cons x (concatlist tail list)
