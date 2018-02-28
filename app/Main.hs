@@ -1029,3 +1029,29 @@ instance Monad List where
     where
       concatlist Nil list = list
       concatlist (Cons x tail) list = Cons x (concatlist tail list)
+
+
+
+joiny :: Monad m => m (m a) -> m a
+joiny x = x >>= id
+
+l1 :: Monad m => (a -> b) -> m a -> m b
+l1 = fmap
+
+l2 :: Monad m => (a -> b -> c) -> m a -> m b -> m c
+l2 f x = (<*>) (fmap f x)
+
+aaa :: Monad m => m a -> m (a -> b) -> m b
+aaa = flip (<*>)
+
+
+meh :: Monad m => [a] -> (a -> m b) -> m [b]
+meh [] _ = return []
+meh (x:xs) f = do
+  y <- f x
+  fmap ((:) y) (meh xs f)
+-- Alternative form
+-- meh (x:xs) f = (f x) >>= \y -> fmap ((:) y) (meh xs f)
+
+flipType :: (Monad m) => [m a] -> m [a]
+flipType = (flip meh) id
