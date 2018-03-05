@@ -1055,3 +1055,14 @@ meh (x:xs) f = do
 
 flipType :: (Monad m) => [m a] -> m [a]
 flipType = (flip meh) id
+
+
+
+mysum :: (Foldable t, Num a) => t a -> a
+mysum x = getSum $ foldMap Sum x
+
+myproduct :: (Foldable t, Num a) => t a -> a
+myproduct x = getProduct $ foldMap Product x
+
+myelem :: (Foldable t, Eq a) => a -> t a -> Bool
+myelem e x = getAny $ foldMap (Any . (== e)) x
