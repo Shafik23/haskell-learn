@@ -701,6 +701,9 @@ instance S.Semigroup (Comp a) where
   (Comp x) <> (Comp y) = Comp (x . y)
 
 
+myisempty :: (Monoid m, Eq m) => m -> Bool
+myisempty x = (x == (mempty))
+
 instance Monoid Trivial where
   mempty = Trivial
   mappend = (S.<>)
@@ -1066,3 +1069,31 @@ myproduct x = getProduct $ foldMap Product x
 
 myelem :: (Foldable t, Eq a) => a -> t a -> Bool
 myelem e x = getAny $ foldMap (Any . (== e)) x
+
+
+maybee :: (a -> a -> a) -> a -> Maybe a -> Maybe a
+maybee f x Nothing = Just x
+maybee f x (Just y) = Just (f x y)
+
+myminimum :: (Foldable t, Ord a) => t a -> Maybe a
+myminimum = foldr (maybee min) Nothing
+
+mymaximum :: (Foldable t, Ord a) => t a -> Maybe a
+mymaximum = foldr (maybee max) Nothing
+
+mynull :: (Foldable t) => t a -> Bool
+mynull = foldr (\_ _ -> False) True
+
+mylength :: (Foldable t) => t a -> Int
+mylength = foldr (\x y -> (y+1)) 0
+
+
+---------------------------------------
+    --
+    -- Get Programming with Haskell
+    --
+---------------------------------------
+
+
+cup flOz = \message -> message flOz
+
