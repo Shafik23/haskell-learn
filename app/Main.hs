@@ -331,8 +331,8 @@ tups ss vs = [a : b : c : [] | a <- ss, b <- vs, c <- ss, a == 'p']
 myOr :: [Bool] -> Bool
 myOr = foldr (||) False
 
-myAny :: (a -> Bool) -> [a] -> Bool
-myAny f list = myOr $ map f list
+myAny' :: (a -> Bool) -> [a] -> Bool
+myAny' f list = myOr $ map f list
 
 myElem :: Eq a => a -> [a] -> Bool
 myElem e = myAny (== e)
@@ -1097,3 +1097,62 @@ mylength = foldr (\x y -> (y+1)) 0
 
 cup flOz = \message -> message flOz
 
+
+data Gender = Male | Female deriving Show
+data RhType = Pos | Neg deriving Show
+data ABOType = A | B | AB | O deriving Show
+data BloodType = BloodType ABOType RhType deriving Show
+
+showABO :: ABOType -> String
+showABO A = "A"
+showABO B = "B"
+showABO AB = "A"
+showABO O = "O"
+
+showRh :: RhType -> String
+showRh Pos = "+"
+showRh Neg = "-"
+
+showBloodType :: BloodType -> String
+showBloodType (BloodType abo rh) = showABO abo ++ showRh rh
+
+data Patient = Patient { _name :: String
+                       , _gender :: Gender
+                       , _age :: Int
+                       , _height :: Int
+                       , _weight :: Int
+                       , _bloodType :: BloodType } deriving (Show)
+
+data Icecream = Vanilla | Chocolate deriving (Show, Eq, Ord)
+
+
+myLast :: [a] -> a
+myLast = head . reverse
+
+myMin :: Ord a => [a] -> a
+myMin = head . sort
+
+myMax :: Ord a => [a] -> a
+myMax = head . reverse . sort
+
+myAll :: (a -> Bool) -> [a] -> Bool
+myAll f = (foldr (&&) True) . (map f)
+
+myAny :: (a -> Bool) -> [a] -> Bool
+myAny f = (foldr (||) False) . (map f)
+
+
+instance S.Semigroup Integer where
+    (<>) x y = x + y
+
+
+data Box a = Box a deriving Show
+
+wrap :: a -> Box a
+wrap x = Box x
+
+unwrap :: Box a -> a
+unwrap (Box x) = x
+
+
+data MyList a = Empty | MyCons a (MyList a)
