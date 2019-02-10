@@ -1156,3 +1156,46 @@ unwrap (Box x) = x
 
 
 data MyList a = Empty | MyCons a (MyList a)
+
+
+-- Prime number generator
+nums :: Integer -> [Integer]
+nums m = pure (*) <*> [2..m] <*> [2..m]
+
+primesToN :: Integer -> [Integer]
+primesToN n = filter isNotComposite [2..n]
+    where
+        isNotComposite = not . (`elem` (nums n))
+
+
+-- Generate all combinations of Users
+data User = User 
+    { thename :: String
+    , gamerId :: Int
+    , score :: Int
+    } deriving Show
+
+testNames :: [String]
+testNames = ["Shafik Amin", "Robert'); DROP TABLE Students;--", "Chris NULL", "Randy"]
+testIds :: [Int]
+testIds = [1342, 342, 2423, 348]
+testScores :: [Int]
+testScores = [0, 10030, -4939]
+
+
+-- Generates all permutations of even/odd pairs
+-- between 1 .. n. Uses "do notation". Note
+-- the lack of loops/recursion! Instead we rely on 
+-- the List's monadic semantics.
+allEvenOdds :: Int -> [(Int, Int)]
+allEvenOdds n = do
+    evenVal <- [2,4 .. n]
+    oddVal <- [1,3 .. n]
+    return (evenVal, oddVal)
+
+-- De-sugared version of above!
+allEvenOdds' :: Int -> [(Int, Int)]
+allEvenOdds' n = [2,4 .. n] >>=
+    (\evenVal -> [1,3 .. n] >>=
+        (\oddVal -> return (evenVal, oddVal)))
+
