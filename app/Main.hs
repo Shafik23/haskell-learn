@@ -14,7 +14,7 @@ import Data.Char
 import Data.Monoid
 import qualified Data.Semigroup as S
 import System.IO
-import Control.Monad (join)
+import Control.Monad (join, foldM)
 import Lib ()
 
 -- This is a comment.
@@ -445,7 +445,7 @@ allLanguages :: [ProgLang]
 allLanguages = [Haskell, Agda, Idris, PureScript]
 
 allProgrammers :: [Programmer]
-allProgrammers = [ Programmer {os = o, lang = p} | o <- allOperatingSystems, p <- allLanguages ]
+allProgrammers = [ Programmer {os = o, lang = p} | o <- allOperatingSystems, p <- allLanguages, x <- [1..13]]
 
 
 data BinaryTree a =
@@ -1199,3 +1199,58 @@ allEvenOdds' n = [2,4 .. n] >>=
     (\evenVal -> [1,3 .. n] >>=
         (\oddVal -> return (evenVal, oddVal)))
 
+
+-----------------
+-- Back to Monads     
+-----------------
+
+add7 :: Int -> ClockNumber Int
+add7 x = return (x+7)
+
+
+class Monad m => ClockMonad m where
+    (>>>=) :: (Integral a, Integral b) => m a -> (a -> m b) -> m b
+
+data ClockNumber a = ClockNumber a deriving Show
+
+instance Functor ClockNumber where
+    fmap f (ClockNumber x) = ClockNumber (f x)
+
+instance Applicative ClockNumber where
+    pure = ClockNumber
+    ClockNumber f <*> ClockNumber x = ClockNumber (f x)
+
+instance Monad ClockNumber where
+    return = ClockNumber
+    (>>=) (ClockNumber x) f = f x
+
+instance ClockMonad ClockNumber where
+    (>>>=) (ClockNumber x) f = (f (x `mod` 12)) 
+
+
+----------------
+
+listSquared :: [Int] -> [Int]
+listSquared list = do
+    x <- list
+    return (x^2);
+
+
+hasDuplicates :: String -> Bool
+hasDuplicates [] = False
+hasDuplicates str = checkHead sorted
+    where
+        sorted = sort str
+        checkHead [] = False
+        checkHead [x] = False
+        checkHead (x:xs) = (x == head xs) || checkHead xs
+
+
+-- Same as hasDuplicates but with foldable Maybe(s)
+hasDupes :: String -> Bool
+hasDupes = isNothing . foldM checkHead 'X' . sort
+    where
+        checkHead :: Char -> Char -> Maybe Char
+        checkHead x y
+          | x == y = Nothing
+          | otherwise = Just y
