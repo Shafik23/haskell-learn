@@ -1254,3 +1254,31 @@ hasDupes = isNothing . foldM checkHead 'X' . sort
         checkHead x y
           | x == y = Nothing
           | otherwise = Just y
+
+---------------------------------------------------
+--- http://learnyouahaskell.com/a-fistful-of-monads
+---------------------------------------------------
+
+type Birds = Int
+type Pole = (Birds, Birds)
+
+landLeft :: Birds -> Pole -> Maybe Pole  
+landLeft n (left,right)  
+    | abs ((left + n) - right) < 4 = Just (left + n, right)  
+    | otherwise = Nothing  
+  
+landRight :: Birds -> Pole -> Maybe Pole  
+landRight n (left,right)  
+    | abs (left - (right + n)) < 4 = Just (left, right + n)  
+    | otherwise = Nothing  
+
+-- Redefine a way to do function application
+x -: f = f x
+
+banana :: Pole -> Maybe Pole  
+banana _ = Nothing
+
+marySue :: Maybe Bool
+marySue = do
+  x <- Just 9
+  Just (x > 8)
