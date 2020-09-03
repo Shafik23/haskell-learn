@@ -1289,3 +1289,9 @@ routine = do
   first <- landLeft 2 start
   second <- landRight 2 first
   landLeft 1 second
+
+listOfTuples :: [(Int, Char)]
+listOfTuples = do
+  n <- [1, 2]
+  ch <- ['a', 'b']
+  return (n, ch)
