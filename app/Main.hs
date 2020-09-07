@@ -1316,3 +1316,19 @@ multWithLog' =
   logNumber 3 >>= \a ->
     logNumber 5 >>= \b ->
       return (a*b+7)
+
+-- This version of the above ignores the unwrapped
+-- monadic values (3, 5, 8 below). Effectively, this
+-- is the same as using the ">>" operator instead of 
+-- the ">>=" operator
+multWithLogIgnore :: Writer [String] Int
+multWithLogIgnore = do
+  logNumber 3
+  logNumber 5
+  logNumber 8
+  return (77)
+
+-- Desugared version of above
+multWithLogIgnore' :: Writer [String] Int
+multWithLogIgnore' = 
+  logNumber 3 >> logNumber 5 >> logNumber 8 >> return 77
