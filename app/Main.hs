@@ -1332,3 +1332,13 @@ multWithLogIgnore = do
 multWithLogIgnore' :: Writer [String] Int
 multWithLogIgnore' = 
   logNumber 3 >> logNumber 5 >> logNumber 8 >> return 77
+
+gcd' :: Int -> Int -> Int
+gcd' a b
+  | b == 0 = a
+  | otherwise = gcd' b (a `mod` b)
+
+gcdLogger :: Int -> Int -> Writer [String] Int
+gcdLogger a b = do
+  tell ["Recieved input " ++ show a ++ ", " ++ show b]
+  return (gcd' a b)
