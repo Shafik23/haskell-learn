@@ -12,9 +12,11 @@ import Data.Maybe
 import Data.List
 import Data.Char
 import Data.Monoid
+import Data.Functor.Identity as DFI 
 import qualified Data.Semigroup as S
 import System.IO
 import Control.Monad (join, foldM)
+import Control.Monad.Writer
 import Lib ()
 
 -- This is a comment.
@@ -763,8 +765,8 @@ test_657 = do
 
 
 newtype Identity a = Identity a
-instance Functor Identity where
-  fmap f (Identity x) = Identity (f x)
+instance Functor Main.Identity where
+  fmap f (Main.Identity x) = Main.Identity (f x)
 
 data Pair a = Pair a a
 instance Functor Pair where
@@ -921,9 +923,9 @@ summed :: Maybe Integer
 summed = fmap sum $ (,) <$> x1 <*> y1
 
 
-instance Applicative Identity where
-  pure = Identity
-  (<*>) (Identity f) (Identity a) = Identity (f a)
+instance Applicative Main.Identity where
+  pure = Main.Identity
+  (<*>) (Main.Identity f) (Main.Identity a) = Main.Identity (f a)
 
 
 
@@ -1019,9 +1021,9 @@ instance Monad (Nope) where
 
 
 -- Identity defined above
-instance Monad Identity where
+instance Monad Main.Identity where
   return = pure
-  (>>=) (Identity x) f = f x
+  (>>=) (Main.Identity x) f = f x
 
 
 -- data List a = Nil | Cons a (List a)
@@ -1295,3 +1297,22 @@ listOfTuples = do
   n <- [1, 2]
   ch <- ['a', 'b']
   return (n, ch)
+
+isBigGang :: Int -> Bool
+isBigGang = (> 9)
+
+logNumber :: Int -> Writer [String] Int  
+logNumber x = WriterT (DFI.Identity (x, ["Got number: " ++ show x]))
+  
+multWithLog :: Writer [String] Int  
+multWithLog = do  
+    a <- logNumber 3  
+    b <- logNumber 5  
+    return (a*b+7)
+
+-- Desugared version of above
+multWithLog' :: Writer [String] Int
+multWithLog' = 
+  logNumber 3 >>= \a ->
+    logNumber 5 >>= \b ->
+      return (a*b+7)
