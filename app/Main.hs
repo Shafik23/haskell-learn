@@ -15,8 +15,10 @@ import Data.Monoid
 import Data.Functor.Identity as DFI 
 import qualified Data.Semigroup as S
 import System.IO
+import System.Random
 import Control.Monad (join, foldM)
 import Control.Monad.Writer
+import Control.Monad.State
 import Lib ()
 
 -- This is a comment.
@@ -1342,3 +1344,38 @@ gcdLogger :: Int -> Int -> Writer [String] Int
 gcdLogger a b = do
   tell ["Recieved input " ++ show a ++ ", " ++ show b]
   return (gcd' a b)
+
+threeCoins :: StdGen -> (Bool, Bool, Bool)  
+threeCoins gen =   
+    let (firstCoin, newGen) = random gen  
+        (secondCoin, newGen') = random newGen  
+        (thirdCoin, _) = random newGen'  
+    in  (firstCoin, secondCoin, thirdCoin)
+
+
+type Stack = [Int]
+
+pop :: State Stack Int  
+pop = state $ \(x:xs) -> (x,xs)
+  
+push :: Int -> State Stack ()  
+push a = state $ \xs -> ((), a:xs)
+
+stackManip :: State Stack Int  
+stackManip = do  
+    push 3  
+    pop  
+    pop
+
+stackStuff :: State Stack ()
+stackStuff = do
+    x <- pop
+    if x == 5
+      then push 42
+      else do
+        push 13
+        push 13
+        push 13
+
+randomSt :: (RandomGen g, Random a) => State g a  
+randomSt = state random
