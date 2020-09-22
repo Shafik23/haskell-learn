@@ -5,7 +5,6 @@
 module Main where
 
 import Test.QuickCheck
-import Data.Either
 import Data.Bool
 import Data.Time
 import Data.Maybe
@@ -13,12 +12,13 @@ import Data.List
 import Data.Char
 import Data.Monoid
 import Data.Functor.Identity as DFI 
+import Data.Ratio (Rational)
 import qualified Data.Semigroup as S
-import System.IO
 import System.Random
 import Control.Monad (join, foldM)
 import Control.Monad.Writer
 import Control.Monad.State
+import Control.Monad.Except
 import Lib ()
 
 -- This is a comment.
@@ -1379,3 +1379,20 @@ stackStuff = do
 
 randomSt :: (RandomGen g, Random a) => State g a  
 randomSt = state random
+
+fourCoins :: State StdGen (Bool, Bool, Bool, Bool)
+fourCoins = do
+  a <- randomSt
+  b <- randomSt
+  c <- randomSt
+  d <- randomSt
+  return (a,b,c,d)
+
+powerset :: [a] -> [[a]]
+powerset xs = filterM (\_ -> [True, False]) xs
+
+
+newtype Prob a = Prob { getProb :: [(a,Rational)] } deriving Show
+
+instance Functor Prob where  
+    fmap f (Prob xs) = Prob $ map (\(x, p) -> (f x, p)) xs
