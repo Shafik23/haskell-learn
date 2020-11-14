@@ -1,0 +1,13 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "biscotty:lib"
+
+    - path: "./app/Main.hs"
+      component: "biscotty:exe:biscotty-exe"
+
+    - path: "./app/Paths_biscotty.hs"
+      component: "biscotty:exe:biscotty-exe"
+
+    - path: "./test"
+      component: "biscotty:test:biscotty-test"
