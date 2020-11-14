@@ -1396,3 +1396,19 @@ newtype Prob a = Prob { getProb :: [(a,Rational)] } deriving Show
 
 instance Functor Prob where  
     fmap f (Prob xs) = Prob $ map (\(x, p) -> (f x, p)) xs
+
+-----------------------------
+
+mm :: IO ()
+mm = do
+  x <- getLine
+  putStrLn $ map toUpper x
+  return ()
+
+
+data XOR a b = LL a | RR b deriving (Eq, Show)
+
+instance Functor (XOR a) where
+  fmap _ (LL val) = LL val
+  fmap f (RR val) = RR (f val)
+
